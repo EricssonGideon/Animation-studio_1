@@ -1,0 +1,1408 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta
+    name="description"
+    content="AutomateX Animation Playground is a futuristic GSAP-powered motion game with floating objects, score modes, unlockable effects, and mobile-friendly performance."
+  />
+  <title>AutomateX Animation Playground</title>
+  <link rel="icon" type="image/png" href="./logo.png" />
+  <link rel="apple-touch-icon" href="./logo.png" />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link
+    href="https://fonts.googleapis.com/css2?family=Baloo+2:wght@600;700;800&family=Nunito:wght@400;600;700;800&display=swap"
+    rel="stylesheet"
+  />
+  <link rel="stylesheet" href="./transition.css" />
+  <style>
+    :root {
+      --bg: #08101f;
+      --bg-2: #111c3e;
+      --panel: rgba(14, 22, 52, 0.74);
+      --panel-strong: rgba(18, 28, 64, 0.88);
+      --line: rgba(145, 193, 255, 0.18);
+      --text: #f4f8ff;
+      --muted: #adbbe7;
+      --accent: #4de0ff;
+      --accent-2: #7f6fff;
+      --accent-3: #6effbf;
+      --accent-4: #ffd75d;
+      --accent-5: #ff7ec7;
+      --shadow: 0 24px 80px rgba(4, 9, 24, 0.42);
+      --glow: 0 0 28px rgba(77, 224, 255, 0.24);
+      --container: min(1180px, calc(100vw - 28px));
+      --header-height: 80px;
+      --playground-bg:
+        radial-gradient(circle at 10% 10%, rgba(77, 224, 255, 0.16), transparent 22%),
+        radial-gradient(circle at 90% 12%, rgba(127, 111, 255, 0.18), transparent 26%),
+        radial-gradient(circle at 48% -8%, rgba(110, 255, 191, 0.08), transparent 24%),
+        linear-gradient(180deg, #08101f 0%, #0f1735 42%, #0a1020 100%);
+    }
+
+    * {
+      box-sizing: border-box;
+    }
+
+    html {
+      scroll-behavior: smooth;
+    }
+
+    body {
+      margin: 0;
+      min-height: 100vh;
+      overflow-x: hidden;
+      color: var(--text);
+      font-family: "Nunito", sans-serif;
+      background: var(--playground-bg);
+    }
+
+    body::before,
+    body::after {
+      content: "";
+      position: fixed;
+      width: 26rem;
+      height: 26rem;
+      border-radius: 50%;
+      pointer-events: none;
+      filter: blur(90px);
+      opacity: 0.22;
+      z-index: 0;
+    }
+
+    body::before {
+      top: -10rem;
+      left: -10rem;
+      background: var(--accent-2);
+    }
+
+    body::after {
+      right: -10rem;
+      bottom: -12rem;
+      background: var(--accent);
+    }
+
+    img,
+    canvas {
+      display: block;
+      max-width: 100%;
+    }
+
+    a {
+      color: inherit;
+      text-decoration: none;
+    }
+
+    button {
+      border: 0;
+      background: none;
+      color: inherit;
+      font: inherit;
+      cursor: pointer;
+    }
+
+    .site-shell {
+      position: relative;
+      z-index: 1;
+    }
+
+    .background-wave,
+    .particle-field,
+    .play-area-grid {
+      position: fixed;
+      inset: 0;
+      pointer-events: none;
+      z-index: 0;
+    }
+
+    .background-wave {
+      background:
+        radial-gradient(circle at 20% 20%, rgba(255, 215, 93, 0.08), transparent 16%),
+        radial-gradient(circle at 70% 22%, rgba(77, 224, 255, 0.08), transparent 18%),
+        radial-gradient(circle at 40% 70%, rgba(255, 126, 199, 0.08), transparent 18%);
+      animation: waveDrift 18s linear infinite;
+    }
+
+    @keyframes waveDrift {
+      from { transform: translate3d(0, 0, 0) scale(1); }
+      50% { transform: translate3d(0, -18px, 0) scale(1.03); }
+      to { transform: translate3d(0, 0, 0) scale(1); }
+    }
+
+    .particle-field {
+      background-image:
+        radial-gradient(circle, rgba(255, 255, 255, 0.42) 0 1px, transparent 1px),
+        radial-gradient(circle, rgba(77, 224, 255, 0.34) 0 1px, transparent 1px);
+      background-size: 36px 36px, 72px 72px;
+      background-position: 0 0, 18px 22px;
+      opacity: 0.22;
+      animation: particleDrift 24s linear infinite;
+    }
+
+    @keyframes particleDrift {
+      from { transform: translateY(0); }
+      to { transform: translateY(-36px); }
+    }
+
+    .play-area-grid {
+      background-image:
+        linear-gradient(rgba(77, 224, 255, 0.06) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(77, 224, 255, 0.06) 1px, transparent 1px);
+      background-size: 32px 32px;
+      mask-image: radial-gradient(circle at center, black, transparent 84%);
+      opacity: 0.32;
+    }
+
+    .topbar {
+      position: sticky;
+      top: 0;
+      z-index: 50;
+      backdrop-filter: blur(18px);
+      background: rgba(8, 14, 32, 0.68);
+      border-bottom: 1px solid rgba(145, 193, 255, 0.1);
+    }
+
+    .topbar-inner,
+    .hero-grid,
+    .hud-grid,
+    .panel-grid,
+    .mode-grid,
+    .footer-grid {
+      display: grid;
+      gap: 18px;
+    }
+
+    .topbar-inner {
+      width: var(--container);
+      min-height: var(--header-height);
+      margin: 0 auto;
+      padding: 10px 0;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 16px;
+    }
+
+    .brand {
+      display: inline-flex;
+      align-items: center;
+      gap: 14px;
+      font-weight: 800;
+    }
+
+    .brand-logo {
+      width: 52px;
+      height: 52px;
+      padding: 4px;
+      border-radius: 18px;
+      object-fit: cover;
+      background: rgba(255, 255, 255, 0.06);
+      border: 1px solid rgba(145, 193, 255, 0.16);
+      box-shadow: var(--glow);
+    }
+
+    .brand-copy {
+      display: grid;
+      gap: 2px;
+      line-height: 1.05;
+    }
+
+    .brand-copy strong,
+    h1,
+    h2,
+    h3 {
+      margin: 0;
+      font-family: "Baloo 2", cursive;
+      letter-spacing: 0.01em;
+    }
+
+    .brand-copy span {
+      color: var(--muted);
+      font-size: 0.92rem;
+    }
+
+    .nav-actions {
+      display: flex;
+      flex-wrap: wrap;
+      align-items: center;
+      gap: 10px;
+    }
+
+    .pill,
+    .mode-button,
+    .action-button,
+    .social-pill {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      min-height: 42px;
+      padding: 0 16px;
+      border-radius: 999px;
+      border: 1px solid rgba(145, 193, 255, 0.16);
+      background: rgba(255, 255, 255, 0.05);
+      transition: transform 0.25s ease, box-shadow 0.25s ease, border-color 0.25s ease, background 0.25s ease;
+    }
+
+    .pill:hover,
+    .mode-button:hover,
+    .action-button:hover,
+    .social-pill:hover {
+      transform: translateY(-3px);
+      box-shadow: var(--glow);
+      border-color: rgba(178, 218, 255, 0.28);
+    }
+
+    .mode-button.active {
+      background: linear-gradient(135deg, var(--accent), var(--accent-2));
+      color: #08111d;
+      font-weight: 800;
+    }
+
+    main,
+    footer {
+      position: relative;
+    }
+
+    section {
+      width: var(--container);
+      margin: 0 auto;
+      padding: 78px 0;
+    }
+
+    .hero {
+      min-height: calc(100vh - var(--header-height));
+      display: grid;
+      align-items: center;
+      padding-top: 24px;
+    }
+
+    .hero-grid {
+      align-items: center;
+    }
+
+    .eyebrow {
+      display: inline-flex;
+      align-items: center;
+      gap: 10px;
+      padding: 10px 16px;
+      border-radius: 999px;
+      background: rgba(255, 255, 255, 0.05);
+      border: 1px solid rgba(145, 193, 255, 0.16);
+      color: var(--muted);
+      text-transform: uppercase;
+      letter-spacing: 0.06em;
+      font-size: 0.8rem;
+      font-weight: 800;
+    }
+
+    .eyebrow::before {
+      content: "";
+      width: 10px;
+      height: 10px;
+      border-radius: 50%;
+      background: var(--accent-3);
+      box-shadow: 0 0 12px var(--accent-3);
+    }
+
+    .hero-copy h1 {
+      margin-top: 18px;
+      font-size: clamp(2.9rem, 10vw, 5.7rem);
+      line-height: 0.94;
+    }
+
+    .hero-copy p,
+    .panel p,
+    .footer-card p,
+    .mode-card p,
+    .hud-card p {
+      margin: 0;
+      color: var(--muted);
+      line-height: 1.72;
+    }
+
+    .hero-copy p {
+      margin-top: 16px;
+      max-width: 620px;
+      font-size: clamp(1rem, 2.8vw, 1.14rem);
+    }
+
+    .hero-actions {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 14px;
+      margin-top: 26px;
+    }
+
+    .action-button {
+      min-height: 54px;
+      padding: 0 22px;
+      border-radius: 18px;
+      font-weight: 800;
+    }
+
+    .action-button.primary {
+      background: linear-gradient(135deg, var(--accent), var(--accent-2));
+      color: #09121d;
+      box-shadow: 0 18px 42px rgba(77, 224, 255, 0.22);
+    }
+
+    .hero-showcase,
+    .panel,
+    .hud-card,
+    .mode-card,
+    .footer-card {
+      background: var(--panel);
+      border: 1px solid var(--line);
+      backdrop-filter: blur(18px);
+      box-shadow: var(--shadow);
+    }
+
+    .hero-showcase,
+    .panel,
+    .hud-card,
+    .mode-card,
+    .footer-card {
+      position: relative;
+      overflow: hidden;
+      border-radius: 30px;
+    }
+
+    .hero-showcase::before,
+    .panel::before,
+    .hud-card::before,
+    .mode-card::before,
+    .footer-card::before {
+      content: "";
+      position: absolute;
+      inset: 0;
+      background: linear-gradient(145deg, rgba(77, 224, 255, 0.12), rgba(127, 111, 255, 0.09));
+      opacity: 0.68;
+      pointer-events: none;
+    }
+
+    .hero-showcase > *,
+    .panel > *,
+    .hud-card > *,
+    .mode-card > *,
+    .footer-card > * {
+      position: relative;
+      z-index: 1;
+    }
+
+    .hero-showcase {
+      min-height: 500px;
+      padding: 18px;
+      background: linear-gradient(180deg, rgba(14, 22, 52, 0.92), rgba(10, 16, 34, 0.88));
+    }
+
+    .hud-grid {
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+      margin-top: 26px;
+    }
+
+    .hud-card,
+    .mode-card,
+    .panel,
+    .footer-card {
+      padding: 20px;
+    }
+
+    .hud-value {
+      display: block;
+      font-size: 1.5rem;
+      font-weight: 800;
+      margin-bottom: 8px;
+    }
+
+    .game-head {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 12px;
+      padding: 12px 14px;
+      border-radius: 18px;
+      background: rgba(255, 255, 255, 0.05);
+      border: 1px solid rgba(255, 255, 255, 0.06);
+      margin-bottom: 16px;
+    }
+
+    .game-status {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      color: var(--muted);
+      font-weight: 700;
+    }
+
+    .game-status::before {
+      content: "";
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+      background: var(--accent-3);
+      box-shadow: 0 0 12px var(--accent-3);
+    }
+
+    .score-pill {
+      min-width: 120px;
+      min-height: 42px;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      padding: 0 16px;
+      border-radius: 999px;
+      font-weight: 800;
+      background: linear-gradient(135deg, rgba(77, 224, 255, 0.18), rgba(127, 111, 255, 0.2));
+      border: 1px solid rgba(145, 193, 255, 0.18);
+      box-shadow: var(--glow);
+    }
+
+    .playground-stage {
+      position: relative;
+      min-height: 360px;
+      border-radius: 26px;
+      overflow: hidden;
+      background:
+        radial-gradient(circle at 20% 20%, rgba(255, 215, 93, 0.1), transparent 18%),
+        radial-gradient(circle at 80% 20%, rgba(77, 224, 255, 0.12), transparent 22%),
+        linear-gradient(180deg, rgba(8, 14, 30, 0.98), rgba(8, 12, 26, 0.74));
+      border: 1px solid rgba(145, 193, 255, 0.1);
+      isolation: isolate;
+    }
+
+    .stage-overlay,
+    .stage-particles {
+      position: absolute;
+      inset: 0;
+      pointer-events: none;
+    }
+
+    .stage-overlay {
+      background-image:
+        linear-gradient(rgba(77, 224, 255, 0.08) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(77, 224, 255, 0.08) 1px, transparent 1px);
+      background-size: 28px 28px;
+      mask-image: radial-gradient(circle at center, black, transparent 88%);
+    }
+
+    .stage-particles {
+      background-image:
+        radial-gradient(circle, rgba(255, 255, 255, 0.38) 0 1px, transparent 1px),
+        radial-gradient(circle, rgba(77, 224, 255, 0.34) 0 1px, transparent 1px);
+      background-size: 34px 34px, 68px 68px;
+      background-position: 0 0, 16px 20px;
+      opacity: 0.24;
+      animation: particleDrift 20s linear infinite;
+    }
+
+    .floating-layer {
+      position: absolute;
+      inset: 0;
+      overflow: hidden;
+      touch-action: manipulation;
+    }
+
+    .game-object {
+      position: absolute;
+      width: 58px;
+      height: 58px;
+      display: grid;
+      place-items: center;
+      border-radius: 20px;
+      color: white;
+      user-select: none;
+      -webkit-user-select: none;
+      touch-action: manipulation;
+      border: 1px solid rgba(255, 255, 255, 0.14);
+      background: rgba(255, 255, 255, 0.08);
+      box-shadow: 0 14px 26px rgba(0, 0, 0, 0.18);
+      backdrop-filter: blur(10px);
+      cursor: pointer;
+      will-change: transform, opacity;
+    }
+
+    .game-object.emoji {
+      font-size: 1.8rem;
+      border-radius: 18px;
+    }
+
+    .game-object.shape-circle {
+      border-radius: 50%;
+      background: linear-gradient(145deg, rgba(77, 224, 255, 0.28), rgba(127, 111, 255, 0.18));
+    }
+
+    .game-object.shape-square {
+      border-radius: 18px;
+      background: linear-gradient(145deg, rgba(255, 215, 93, 0.24), rgba(255, 126, 199, 0.18));
+    }
+
+    .game-object.shape-triangle {
+      background: transparent;
+      border: 0;
+      box-shadow: none;
+      backdrop-filter: none;
+    }
+
+    .game-object.shape-triangle::before {
+      content: "";
+      width: 0;
+      height: 0;
+      border-left: 26px solid transparent;
+      border-right: 26px solid transparent;
+      border-bottom: 46px solid rgba(110, 255, 191, 0.9);
+      filter: drop-shadow(0 0 12px rgba(110, 255, 191, 0.28));
+    }
+
+    .burst {
+      position: absolute;
+      width: 18px;
+      height: 18px;
+      border-radius: 50%;
+      border: 2px solid rgba(255, 255, 255, 0.72);
+      pointer-events: none;
+      z-index: 5;
+    }
+
+    .mode-grid,
+    .panel-grid {
+      grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+    }
+
+    .mode-card.active {
+      border-color: rgba(77, 224, 255, 0.32);
+      box-shadow: 0 18px 42px rgba(77, 224, 255, 0.12);
+    }
+
+    .mode-card h3,
+    .panel h3 {
+      margin-bottom: 8px;
+    }
+
+    .mode-actions {
+      display: flex;
+      gap: 10px;
+      flex-wrap: wrap;
+      margin-top: 16px;
+    }
+
+    .mode-banner {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      padding: 8px 12px;
+      border-radius: 999px;
+      background: rgba(255, 255, 255, 0.06);
+      border: 1px solid rgba(145, 193, 255, 0.14);
+      color: var(--muted);
+      font-weight: 700;
+      margin-top: 12px;
+    }
+
+    .unlock-list,
+    .social-links {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 10px;
+      margin-top: 12px;
+    }
+
+    .unlock-chip {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      padding: 8px 12px;
+      border-radius: 999px;
+      background: rgba(255, 255, 255, 0.05);
+      border: 1px solid rgba(145, 193, 255, 0.12);
+      color: var(--muted);
+      font-size: 0.88rem;
+      font-weight: 700;
+    }
+
+    .unlock-chip.unlocked {
+      color: #08111d;
+      background: linear-gradient(135deg, var(--accent-4), var(--accent));
+      border-color: transparent;
+      box-shadow: var(--glow);
+    }
+
+    .mascot-popup {
+      position: fixed;
+      right: 18px;
+      bottom: 18px;
+      z-index: 40;
+      width: min(300px, calc(100vw - 36px));
+      padding: 16px;
+      border-radius: 24px;
+      background: rgba(16, 24, 58, 0.92);
+      border: 1px solid rgba(145, 193, 255, 0.18);
+      box-shadow: var(--shadow);
+      display: flex;
+      align-items: center;
+      gap: 14px;
+      transform: translateY(120%);
+      opacity: 0;
+    }
+
+    .mascot-avatar {
+      width: 68px;
+      height: 68px;
+      flex: 0 0 68px;
+      border-radius: 22px;
+      display: grid;
+      place-items: center;
+      font-size: 2rem;
+      background: linear-gradient(145deg, rgba(77, 224, 255, 0.22), rgba(127, 111, 255, 0.24));
+      border: 1px solid rgba(145, 193, 255, 0.16);
+      box-shadow: var(--glow);
+    }
+
+    .mascot-popup strong {
+      display: block;
+      margin-bottom: 6px;
+    }
+
+    .mascot-popup p {
+      margin: 0;
+      color: var(--muted);
+      line-height: 1.6;
+    }
+
+    .footer-card {
+      margin-bottom: 40px;
+    }
+
+    .footer-grid {
+      grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+      align-items: start;
+    }
+
+    .reveal {
+      opacity: 1;
+      transform: none;
+    }
+
+    @media (min-width: 860px) {
+      .hero-grid {
+        grid-template-columns: 1fr 1.02fr;
+      }
+    }
+
+    @media (max-width: 859px) {
+      .topbar-inner {
+        justify-content: center;
+      }
+
+      .nav-actions {
+        justify-content: center;
+      }
+
+      .hud-grid {
+        grid-template-columns: 1fr;
+      }
+    }
+
+    @media (prefers-reduced-motion: reduce) {
+      html {
+        scroll-behavior: auto;
+      }
+
+      *,
+      *::before,
+      *::after {
+        animation-duration: 0.01ms !important;
+        animation-iteration-count: 1 !important;
+        transition-duration: 0.01ms !important;
+      }
+    }
+  </style>
+</head>
+<body>
+  <div class="background-wave" aria-hidden="true"></div>
+  <div class="particle-field" id="particleField" aria-hidden="true"></div>
+  <div class="play-area-grid" aria-hidden="true"></div>
+
+  <div class="site-shell">
+    <header class="topbar">
+      <div class="topbar-inner">
+        <a class="brand" href="./index.html" aria-label="Back to AutomateX home">
+          <img class="brand-logo" src="./logo.png" alt="AutomateX logo" />
+          <span class="brand-copy">
+            <strong>AutomateX Playground</strong>
+            <span>GSAP motion game environment</span>
+          </span>
+        </a>
+        <div class="nav-actions">
+          <a class="pill" href="./index.html">Back Home</a>
+          <a class="pill" href="#modes">Game Modes</a>
+          <a class="pill" href="#rewards">Unlocks</a>
+        </div>
+      </div>
+    </header>
+
+    <main>
+      <section class="hero">
+        <div class="hero-grid">
+          <div class="hero-copy reveal">
+            <span class="eyebrow">Interactive Motion Game</span>
+            <h1>Animation Playground</h1>
+            <p>
+              A futuristic game room inside AutomateX where floating objects drift across the screen,
+              every click triggers a little motion celebration, and score milestones unlock new visual rewards.
+            </p>
+            <div class="hero-actions">
+              <a class="action-button primary" href="#playground">Start Playing</a>
+              <button class="action-button" id="resetScoreButton" type="button">Reset Score</button>
+            </div>
+            <div class="hud-grid">
+              <article class="hud-card reveal">
+                <strong class="hud-value" id="hudScore">0</strong>
+                <p>Total score stored locally so the playground remembers your progress.</p>
+              </article>
+              <article class="hud-card reveal">
+                <strong class="hud-value" id="hudCombo">x1</strong>
+                <p>Combo multiplier rises when you keep clicking without long pauses.</p>
+              </article>
+              <article class="hud-card reveal">
+                <strong class="hud-value" id="hudMode">Relax</strong>
+                <p>Switch between Relax, Combo, and Speed Click modes at any time.</p>
+              </article>
+            </div>
+          </div>
+
+          <div class="hero-showcase reveal" id="playground">
+            <div class="game-head">
+              <span class="game-status" id="modeStatus">Relax Mode active</span>
+              <div class="score-pill">Score: <span id="liveScore">0</span></div>
+            </div>
+            <div class="playground-stage" id="playgroundStage">
+              <div class="stage-overlay"></div>
+              <div class="stage-particles"></div>
+              <div class="floating-layer" id="floatingLayer"></div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <section id="modes">
+        <div class="panel-grid">
+          <article class="mode-card reveal active" data-mode-card="relax">
+            <h3>Relax Mode</h3>
+            <p>Slow floating patterns, gentle pacing, and a calmer playground for easy tapping.</p>
+            <div class="mode-banner">Best for casual exploration</div>
+          </article>
+          <article class="mode-card reveal" data-mode-card="combo">
+            <h3>Combo Mode</h3>
+            <p>Consecutive clicks stack a multiplier, rewarding rhythmic play and momentum.</p>
+            <div class="mode-banner">Best for chaining streaks</div>
+          </article>
+          <article class="mode-card reveal" data-mode-card="speed">
+            <h3>Speed Click Mode</h3>
+            <p>Click 10 objects quickly before the timer ends to complete the mini challenge.</p>
+            <div class="mode-banner">Best for quick challenge bursts</div>
+          </article>
+        </div>
+        <div class="mode-actions">
+          <button class="mode-button active" data-mode="relax" type="button">Relax Mode</button>
+          <button class="mode-button" data-mode="combo" type="button">Combo Mode</button>
+          <button class="mode-button" data-mode="speed" type="button">Speed Click Mode</button>
+        </div>
+      </section>
+
+      <section id="rewards">
+        <div class="panel-grid">
+          <article class="panel reveal">
+            <h3>Unlockable effect system</h3>
+            <p>As your score rises, the background pulses brighter, the mascot reacts, particles intensify, and confetti celebrates major milestones.</p>
+            <div class="unlock-list">
+              <span class="unlock-chip" id="unlock10">10: Glow pulse</span>
+              <span class="unlock-chip" id="unlock25">25: Mascot popup</span>
+              <span class="unlock-chip" id="unlock50">50: Particle boost</span>
+              <span class="unlock-chip" id="unlock100">100: Confetti burst</span>
+            </div>
+          </article>
+          <article class="panel reveal">
+            <h3>Performance guardrails</h3>
+            <p>The playground limits active objects, cleans removed elements, reduces particle intensity on mobile, and uses GSAP only for short, efficient motion bursts.</p>
+          </article>
+          <article class="panel reveal">
+            <h3>Mini challenge state</h3>
+            <p id="challengeText">Relax Mode is active. Tap drifting objects whenever you like.</p>
+          </article>
+        </div>
+      </section>
+    </main>
+
+    <footer>
+      <section>
+        <div class="footer-card reveal">
+          <div class="footer-grid">
+            <div>
+              <span class="eyebrow">Play Again</span>
+              <h2>Lightweight, smooth, and built to reward curious clicks.</h2>
+              <p>The playground stays fun by keeping the motion clear, the controls touch-friendly, and the visuals fast enough for phones and low-power devices.</p>
+            </div>
+            <div>
+              <h3>Quick Links</h3>
+              <div class="social-links">
+                <a class="social-pill" href="./index.html">Home</a>
+                <a class="social-pill" href="#playground">Play Area</a>
+                <a class="social-pill" href="#modes">Modes</a>
+              </div>
+            </div>
+            <div>
+              <h3>Status</h3>
+              <p id="footerStatus">Playground initialized and waiting for the next floating object.</p>
+            </div>
+          </div>
+        </div>
+      </section>
+    </footer>
+  </div>
+
+  <aside class="mascot-popup" id="mascotPopup" aria-live="polite">
+    <div class="mascot-avatar">🤖</div>
+    <div>
+      <strong>AXI says nice work!</strong>
+      <p>You unlocked a new reaction reward in the playground.</p>
+    </div>
+  </aside>
+
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.5/gsap.min.js"></script>
+  <script>
+    document.addEventListener("DOMContentLoaded", () => {
+      console.log("[AutomateX Playground] DOM ready");
+
+      const prefersReducedMotion = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+      const isMobile = window.innerWidth < 768;
+      const maxObjects = prefersReducedMotion ? 8 : isMobile ? 10 : 14;
+      const stage = document.getElementById("playgroundStage");
+      const layer = document.getElementById("floatingLayer");
+      const liveScore = document.getElementById("liveScore");
+      const hudScore = document.getElementById("hudScore");
+      const hudCombo = document.getElementById("hudCombo");
+      const hudMode = document.getElementById("hudMode");
+      const modeStatus = document.getElementById("modeStatus");
+      const challengeText = document.getElementById("challengeText");
+      const footerStatus = document.getElementById("footerStatus");
+      const particleField = document.getElementById("particleField");
+      const mascotPopup = document.getElementById("mascotPopup");
+      const resetScoreButton = document.getElementById("resetScoreButton");
+      const modeButtons = Array.from(document.querySelectorAll(".mode-button"));
+      const modeCards = Array.from(document.querySelectorAll("[data-mode-card]"));
+      const unlock10 = document.getElementById("unlock10");
+      const unlock25 = document.getElementById("unlock25");
+      const unlock50 = document.getElementById("unlock50");
+      const unlock100 = document.getElementById("unlock100");
+
+      const state = {
+        mode: "relax",
+        score: Number(localStorage.getItem("automatex-playground-score") || "0"),
+        displayedScore: 0,
+        combo: 1,
+        lastClickAt: 0,
+        speedHits: 0,
+        speedRunning: false,
+        speedEndsAt: 0,
+        objects: new Map(),
+        objectId: 0,
+        spawnTimer: null,
+        cleanupTimer: null,
+        rewardFlags: {
+          pulse10: false,
+          popup25: false,
+          particles50: false,
+          confetti100: false
+        }
+      };
+
+      const objectPool = [
+        { type: "emoji", label: "⭐" },
+        { type: "emoji", label: "😄" },
+        { type: "emoji", label: "🔥" },
+        { type: "emoji", label: "✨" },
+        { type: "shape-circle", label: "" },
+        { type: "shape-square", label: "" },
+        { type: "shape-triangle", label: "" }
+      ];
+
+      const modeConfig = {
+        relax: {
+          label: "Relax",
+          status: "Relax Mode active",
+          text: "Relax Mode is active. Tap drifting objects whenever you like.",
+          spawnInterval: 1300,
+          travelTime: [8.5, 11.5],
+          comboWindow: 1600,
+          basePoints: 1
+        },
+        combo: {
+          label: "Combo",
+          status: "Combo Mode active",
+          text: "Combo Mode is active. Keep clicks close together to raise your multiplier.",
+          spawnInterval: 1000,
+          travelTime: [7.2, 10],
+          comboWindow: 1100,
+          basePoints: 1
+        },
+        speed: {
+          label: "Speed",
+          status: "Speed Click Mode active",
+          text: "Speed Click Mode is active. Hit 10 objects before the timer ends.",
+          spawnInterval: 760,
+          travelTime: [5.5, 7.5],
+          comboWindow: 900,
+          basePoints: 1
+        }
+      };
+
+      function saveScore() {
+        localStorage.setItem("automatex-playground-score", String(state.score));
+      }
+
+      function animateScoreDisplay(target) {
+        if (!window.gsap) {
+          liveScore.textContent = String(target);
+          hudScore.textContent = String(target);
+          return;
+        }
+
+        const holder = { value: Number(hudScore.textContent || "0") };
+        window.gsap.to(holder, {
+          value: target,
+          duration: 0.45,
+          ease: "power2.out",
+          onUpdate: () => {
+            const rounded = Math.round(holder.value);
+            liveScore.textContent = String(rounded);
+            hudScore.textContent = String(rounded);
+          }
+        });
+      }
+
+      function updateComboDisplay() {
+        hudCombo.textContent = `x${state.combo}`;
+      }
+
+      function updateModeUI() {
+        const config = modeConfig[state.mode];
+        hudMode.textContent = config.label;
+        modeStatus.textContent = config.status;
+        challengeText.textContent = config.text;
+        footerStatus.textContent = `${config.status}. Active objects: ${state.objects.size}/${maxObjects}.`;
+
+        modeButtons.forEach((button) => {
+          button.classList.toggle("active", button.dataset.mode === state.mode);
+        });
+
+        modeCards.forEach((card) => {
+          card.classList.toggle("active", card.dataset.modeCard === state.mode);
+        });
+      }
+
+      function triggerBackgroundPulse() {
+        document.body.animate(
+          [
+            { filter: "brightness(1)" },
+            { filter: "brightness(1.12)" },
+            { filter: "brightness(1)" }
+          ],
+          { duration: 1100, easing: "ease-in-out" }
+        );
+      }
+
+      function showMascotPopup() {
+        if (!window.gsap) {
+          mascotPopup.style.transform = "translateY(0)";
+          mascotPopup.style.opacity = "1";
+          window.setTimeout(() => {
+            mascotPopup.style.transform = "translateY(120%)";
+            mascotPopup.style.opacity = "0";
+          }, 2600);
+          return;
+        }
+
+        window.gsap.killTweensOf(mascotPopup);
+        window.gsap.to(mascotPopup, {
+          y: 0,
+          opacity: 1,
+          duration: 0.45,
+          ease: "back.out(1.6)",
+          onStart: () => {
+            mascotPopup.style.transform = "translateY(0)";
+          }
+        });
+        window.gsap.to(mascotPopup, {
+          opacity: 0,
+          y: 120,
+          duration: 0.5,
+          delay: 2.4,
+          ease: "power2.in"
+        });
+      }
+
+      function createConfettiBurst() {
+        for (let i = 0; i < 22; i += 1) {
+          const piece = document.createElement("span");
+          piece.style.position = "fixed";
+          piece.style.left = `${Math.random() * 100}%`;
+          piece.style.top = "-20px";
+          piece.style.width = "12px";
+          piece.style.height = "18px";
+          piece.style.borderRadius = "4px";
+          piece.style.zIndex = "80";
+          piece.style.pointerEvents = "none";
+          piece.style.background = ["#4de0ff", "#7f6fff", "#6effbf", "#ffd75d", "#ff7ec7"][i % 5];
+          document.body.appendChild(piece);
+
+          if (window.gsap) {
+            window.gsap.to(piece, {
+              y: window.innerHeight + 50,
+              x: (Math.random() - 0.5) * 220,
+              rotation: Math.random() * 520,
+              opacity: 0,
+              duration: 2.4 + Math.random() * 0.6,
+              ease: "power1.out",
+              onComplete: () => piece.remove()
+            });
+          } else {
+            window.setTimeout(() => piece.remove(), 2600);
+          }
+        }
+      }
+
+      function updateUnlocks() {
+        if (state.score >= 10 && !state.rewardFlags.pulse10) {
+          state.rewardFlags.pulse10 = true;
+          unlock10.classList.add("unlocked");
+          triggerBackgroundPulse();
+        }
+
+        if (state.score >= 25 && !state.rewardFlags.popup25) {
+          state.rewardFlags.popup25 = true;
+          unlock25.classList.add("unlocked");
+          showMascotPopup();
+        }
+
+        if (state.score >= 50 && !state.rewardFlags.particles50) {
+          state.rewardFlags.particles50 = true;
+          unlock50.classList.add("unlocked");
+          particleField.style.opacity = isMobile ? "0.28" : "0.4";
+        }
+
+        if (state.score >= 100 && !state.rewardFlags.confetti100) {
+          state.rewardFlags.confetti100 = true;
+          unlock100.classList.add("unlocked");
+          createConfettiBurst();
+        }
+      }
+
+      function clampPosition(value, max) {
+        return Math.max(0, Math.min(value, max));
+      }
+
+      function createBurst(x, y) {
+        const burst = document.createElement("span");
+        burst.className = "burst";
+        burst.style.left = `${x - 9}px`;
+        burst.style.top = `${y - 9}px`;
+        burst.style.borderColor = "rgba(255,255,255,0.78)";
+        layer.appendChild(burst);
+
+        if (window.gsap) {
+          window.gsap.fromTo(
+            burst,
+            { scale: 0.2, opacity: 1 },
+            {
+              scale: 4,
+              opacity: 0,
+              duration: 0.45,
+              ease: "power2.out",
+              onComplete: () => burst.remove()
+            }
+          );
+        } else {
+          window.setTimeout(() => burst.remove(), 500);
+        }
+      }
+
+      function removeObject(id) {
+        const entry = state.objects.get(id);
+        if (!entry) return;
+        if (entry.floatTween) entry.floatTween.kill();
+        if (entry.driftTween) entry.driftTween.kill();
+        entry.element.remove();
+        state.objects.delete(id);
+        footerStatus.textContent = `${modeConfig[state.mode].status}. Active objects: ${state.objects.size}/${maxObjects}.`;
+      }
+
+      function handleSpeedChallengeSuccess() {
+        state.speedRunning = false;
+        state.speedHits = 0;
+        challengeText.textContent = "Speed challenge complete! A quick reward burst has been triggered.";
+        createConfettiBurst();
+      }
+
+      function registerHit(points) {
+        state.score += points;
+        saveScore();
+        animateScoreDisplay(state.score);
+        updateUnlocks();
+      }
+
+      function handleObjectClick(id, event) {
+        const entry = state.objects.get(id);
+        if (!entry || entry.hit) return;
+        entry.hit = true;
+
+        const now = Date.now();
+        const config = modeConfig[state.mode];
+        if (now - state.lastClickAt <= config.comboWindow) {
+          state.combo = Math.min(state.combo + 1, 6);
+        } else {
+          state.combo = 1;
+        }
+        state.lastClickAt = now;
+        updateComboDisplay();
+
+        let points = config.basePoints;
+        if (state.mode === "combo") {
+          points *= state.combo;
+        }
+        registerHit(points);
+
+        if (state.mode === "speed") {
+          if (!state.speedRunning) {
+            state.speedRunning = true;
+            state.speedHits = 0;
+            state.speedEndsAt = Date.now() + 12000;
+          }
+          state.speedHits += 1;
+          challengeText.textContent = `Speed challenge: ${state.speedHits}/10 hits before time runs out.`;
+          if (state.speedHits >= 10) {
+            handleSpeedChallengeSuccess();
+          }
+        }
+
+        const rect = layer.getBoundingClientRect();
+        const burstX = event.clientX ? event.clientX - rect.left : entry.x + 24;
+        const burstY = event.clientY ? event.clientY - rect.top : entry.y + 24;
+        createBurst(burstX, burstY);
+
+        if (window.gsap) {
+          window.gsap.to(entry.element, {
+            scale: 1.45,
+            opacity: 0,
+            rotation: 22,
+            duration: 0.36,
+            ease: "back.in(1.6)",
+            onComplete: () => removeObject(id)
+          });
+        } else {
+          removeObject(id);
+        }
+      }
+
+      function randomObjectData() {
+        const seed = objectPool[Math.floor(Math.random() * objectPool.length)];
+        return { ...seed };
+      }
+
+      function spawnObject() {
+        if (state.objects.size >= maxObjects) return;
+        const bounds = layer.getBoundingClientRect();
+        if (!bounds.width || !bounds.height) return;
+
+        const object = document.createElement("button");
+        const data = randomObjectData();
+        const id = `object-${state.objectId += 1}`;
+        const x = Math.random() * Math.max(bounds.width - 64, 40);
+        const y = Math.random() * Math.max(bounds.height - 84, 40);
+        const driftX = clampPosition(x + (Math.random() - 0.5) * 180, bounds.width - 60);
+        const driftY = clampPosition(y + (Math.random() - 0.5) * 140, bounds.height - 60);
+        const config = modeConfig[state.mode];
+        const duration = config.travelTime[0] + Math.random() * (config.travelTime[1] - config.travelTime[0]);
+
+        object.className = `game-object ${data.type}`;
+        object.type = "button";
+        object.setAttribute("aria-label", "Floating game object");
+        object.style.left = `${x}px`;
+        object.style.top = `${y}px`;
+        if (data.label) object.textContent = data.label;
+        layer.appendChild(object);
+
+        let floatTween = null;
+        let driftTween = null;
+
+        if (window.gsap && !prefersReducedMotion) {
+          floatTween = window.gsap.to(object, {
+            y: "+=18",
+            duration: 1.6 + Math.random(),
+            repeat: -1,
+            yoyo: true,
+            ease: "sine.inOut"
+          });
+
+          driftTween = window.gsap.to(object, {
+            x: driftX - x,
+            y: driftY - y,
+            duration,
+            ease: "sine.inOut",
+            onComplete: () => {
+              if (!state.objects.get(id)?.hit) {
+                removeObject(id);
+              }
+            }
+          });
+        } else {
+          window.setTimeout(() => {
+            if (!state.objects.get(id)?.hit) {
+              removeObject(id);
+            }
+          }, duration * 1000);
+        }
+
+        const entry = {
+          id,
+          element: object,
+          x,
+          y,
+          hit: false,
+          floatTween,
+          driftTween
+        };
+
+        state.objects.set(id, entry);
+        object.addEventListener("click", (event) => handleObjectClick(id, event), { passive: true });
+        footerStatus.textContent = `${modeConfig[state.mode].status}. Active objects: ${state.objects.size}/${maxObjects}.`;
+      }
+
+      function startSpawner() {
+        if (state.spawnTimer) window.clearInterval(state.spawnTimer);
+        const interval = modeConfig[state.mode].spawnInterval;
+        state.spawnTimer = window.setInterval(() => {
+          spawnObject();
+        }, interval);
+      }
+
+      function pruneObjectsForMode() {
+        const ids = Array.from(state.objects.keys());
+        while (ids.length > maxObjects) {
+          const id = ids.shift();
+          if (id) removeObject(id);
+        }
+      }
+
+      function switchMode(mode) {
+        state.mode = mode;
+        state.combo = 1;
+        state.speedHits = 0;
+        state.speedRunning = false;
+        updateComboDisplay();
+        updateModeUI();
+        startSpawner();
+        pruneObjectsForMode();
+      }
+
+      function initModeButtons() {
+        modeButtons.forEach((button) => {
+          button.addEventListener("click", () => {
+            switchMode(button.dataset.mode);
+          });
+        });
+      }
+
+      function initReset() {
+        resetScoreButton.addEventListener("click", () => {
+          state.score = 0;
+          state.combo = 1;
+          state.speedHits = 0;
+          state.speedRunning = false;
+          state.rewardFlags = {
+            pulse10: false,
+            popup25: false,
+            particles50: false,
+            confetti100: false
+          };
+          [unlock10, unlock25, unlock50, unlock100].forEach((chip) => chip.classList.remove("unlocked"));
+          particleField.style.opacity = isMobile ? "0.18" : "0.22";
+          saveScore();
+          animateScoreDisplay(0);
+          updateComboDisplay();
+          updateModeUI();
+          challengeText.textContent = "Score reset. The playground is ready for a fresh run.";
+        });
+      }
+
+      function initChallengeLoop() {
+        state.cleanupTimer = window.setInterval(() => {
+          if (state.mode === "speed" && state.speedRunning && Date.now() > state.speedEndsAt) {
+            state.speedRunning = false;
+            state.speedHits = 0;
+            challengeText.textContent = "Speed challenge ended. Switch modes or try another quick burst.";
+          }
+
+          if (Date.now() - state.lastClickAt > modeConfig[state.mode].comboWindow) {
+            if (state.combo !== 1) {
+              state.combo = 1;
+              updateComboDisplay();
+            }
+          }
+        }, 300);
+      }
+
+      function initInitialState() {
+        animateScoreDisplay(state.score);
+        updateComboDisplay();
+        updateModeUI();
+        updateUnlocks();
+        if (state.score >= 50) {
+          particleField.style.opacity = isMobile ? "0.28" : "0.4";
+        }
+        for (let i = 0; i < Math.min(6, maxObjects); i += 1) {
+          spawnObject();
+        }
+        startSpawner();
+      }
+
+      function initScrollReveal() {
+        const revealElements = document.querySelectorAll(".reveal");
+        if (!("IntersectionObserver" in window) || !window.gsap || prefersReducedMotion) {
+          return;
+        }
+
+        const observer = new IntersectionObserver((entries) => {
+          entries.forEach((entry) => {
+            if (!entry.isIntersecting) return;
+            window.gsap.from(entry.target, {
+              y: 20,
+              opacity: 0,
+              duration: 0.7,
+              ease: "power2.out"
+            });
+            observer.unobserve(entry.target);
+          });
+        }, { threshold: 0.2 });
+
+        revealElements.forEach((node) => observer.observe(node));
+      }
+
+      initModeButtons();
+      initReset();
+      initChallengeLoop();
+      initInitialState();
+      initScrollReveal();
+
+      console.log("[AutomateX Playground] Initialized", {
+        mode: state.mode,
+        maxObjects,
+        score: state.score,
+        mobile: isMobile
+      });
+    });
+  </script>
+  <script src="./transition.js"></script>
+</body>
+</html>
